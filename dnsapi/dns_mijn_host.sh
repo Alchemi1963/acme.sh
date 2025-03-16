@@ -1,6 +1,6 @@
 #!/usr/bin/env sh
 # shellcheck disable=SC2034
-dns_mijnhost_info='mijn.host
+dns_mijn_host_info='mijn.host
 Domains: mijn.host
 Site: mijn.host
 Docs: https://mijn.host/api/doc/api-3563900
@@ -96,7 +96,7 @@ dns_mijn_host_rm() {
   extracted_domain="${root_zone#*_acme-challenge.}"
   
   # Construct the API URL
-  api_url=""$MIJN_HOST_API"/domains/$extracted_domain/dns"
+  api_url="$MIJN_HOST_API/domains/$extracted_domain/dns"
   
   # Get current records
   response="$(_get "$api_url")"
@@ -127,11 +127,11 @@ _get_root() {
   p=1
 
   export _H1="Accept: application/json"
-  export _H2="API-Key: "$MIJN_HOST_API_KEY""
-  response=$(_get ""$MIJN_HOST_API"/domains/")
+  export _H2="API-Key: $MIJN_HOST_API_KEY"
+  response="$(_get "$MIJN_HOST_API/domains/")"
   _debug response "$response"
   
-  if [ $(echo "$response" | jq '.status') != 200 ]; then
+  if [ "$(echo "$response" | jq '.status')" != 200 ]; then
   	_err "$(echo "$response" | jq '.status_description')"
     return 1
   fi
