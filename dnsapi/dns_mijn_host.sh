@@ -42,7 +42,7 @@ dns_mijn_host_add() {
   export _H1="API-Key: $MIJN_HOST_API_KEY"
   export _H2="Content-Type: application/json"
 
-  extracted_domain="${fulldomain#*_acme-challenge.}"
+  extracted_domain="${root_zone#*_acme-challenge.}"
 
   # Construct the API URL
   api_url="$MIJN_HOST_API/domains/$extracted_domain/dns"
@@ -93,10 +93,10 @@ dns_mijn_host_rm() {
   export _H1="API-Key: $MIJN_HOST_API_KEY"
   export _H2="Content-Type: application/json"
 
-  extracted_domain="${fulldomain#*_acme-challenge.}"
+  extracted_domain="${root_zone#*_acme-challenge.}"
   
   # Construct the API URL
-  api_url="$MIJN_HOST_API/domains/$extracted_domain/dns"
+  api_url=""$MIJN_HOST_API"/domains/$extracted_domain/dns"
   
   # Get current records
   response="$(_get "$api_url")"
@@ -126,15 +126,30 @@ _get_root() {
   i=2
   p=1
 
+  export _H1="Accept: application/json"
+  export _H2="API-Key: "$MIJN_HOST_API_KEY""
+  response=$(_get ""$MIJN_HOST_API"/domains/")
+  _debug response "$response"
+  
+  if [ $(echo "$response" | jq '.status') != 200 ]; then
+  	_err "$(echo "$response" | jq '.status_description')"
+    return 1
+  fi
+  
+  mijn_host_domains="$(echo "$response" | jq '.data.domains.[] | .domain')"
+
   while true; do
-    h=$(printf "%s" "$domain" | cut -d . -f $i-)
+    h=$(printf "%s" "$domain" | cut -d . -f "$i-")
+    _debug h "$h"
     if [ -z "$h" ]; then
       return 1
     fi
 
-    if _contains "$(dig ns "$h")" "mijn.host"; then
+    if _contains "$mijn_host_domains" "$h"; then
       root_zone="$h"
-      subdomain=$(printf "%s" "$domain" | cut -d . -f 1-$p)
+      subdomain=$(printf "%s" "$domain" | cut -d . -f "1-$p")
+      _debug root_zone "$root_zone"
+      _debug subdomain "$subdomain"
       return 0
     fi
 
